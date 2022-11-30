@@ -1,0 +1,117 @@
+Quick install notes for video:
+
+
+video=1920x1080 kernel boot parameter for QEMU VM
+
+setfont ter-128n
+
+configure networking as needed
+
+sudo -i
+
+lsblk
+
+gdisk /dev/vda
+	configure 600M type ef00, rest ext4 type 8300
+	
+lsblk
+
+mkfs.fat -F 32 -n boot /dev/vda1
+
+mkfs.ext4 -L nixos /dev/vda2
+
+mount /dev/disk/by-label/nixos /mnt
+mkdir /mnt/boot
+mount /dev/disk/by-label/boot /mnt/boot
+
+nixos-generate-config --root /mnt
+
+nano /mnt/etc/nixos/configuration.nix
+	networking.hostName = "nixie-1";
+	networking.networkmanager.enable = true;
+	time.timeZone = "US/Pacific";
+	services.openssh.enable = true;
+	networking.firewall.enable = false;
+	system.copySystemConfiguration = true;
+	
+nixos-install
+
+base install done, now reboot
+
+video=1920x1080
+
+setfont ter-128n will fail, so:
+
+nano /etc/nixos/configuration.nix
+	i18n.defaultLocale = "en_US.UTF-8";
+  	console = {
+    		earlySetup = true;
+    		font = "${pkgs.terminus_font}/share/consolefonts/ter-128n.psf.gz";
+    		packages = with pkgs; [ terminus_font ];
+    		keyMap = "us";
+		};
+
+nix-channel --update
+nixos-rebuild switch
+
+nano /etc/nixos/configuration.nix
+	uncomment user account, change to name to stephen
+
+nix-channel --update
+nixos-rebuild switch
+
+passwd stephen
+
+su - stephen -c "true"
+
+logout, log back in as stephen
+
+sudo nano /etc/nixos/configuration.nix
+	services.xserver.enable = true;
+	services.xserver.displayManager.gdm.enable = true;
+	services.xserver.desktopManager.gnome.enable = true;
+	services.xserver.layout = "us";
+	
+sudo nix-channel --update
+sudo nixos-rebuild switch
+
+reboot
+
+log in to GDM, Xorg session
+
+Configure GNOME as needed
+
+terminal
+
+free -h
+
+sudo nano /etc/nixos/configuration.nix
+	# ZRAM
+	zramSwap.enable = true;
+	zramSwap.memoryPercent = 50;
+
+sudo nix-channel --update
+sudo nixos-rebuild switch
+
+free -h
+
+reboot, choose previous Generation
+
+terminal
+free -h and see Swap is unconfigured again
+
+reboot, choose latest Generation
+
+terminal
+free -h
+ls /nix/store
+cat /etc/issue
+cat /etc/fstab
+df -h
+
+sudo nano /etc/nixos/configuration.nix
+	add neofetch to user packages
+
+sudo nix-channel --update
+sudo nixos-rebuild switch
+neofetch
